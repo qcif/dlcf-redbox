@@ -25,7 +25,18 @@ if(payload.getId().endsWith(".tfpackage")){
 	document.addField("workflow.id", fullJson.getString("","workflow","id"))
 	document.addField("workflow.stage", fullJson.getString("","workflow","stage"))
 	document.addField("workflow.label", fullJson.getString("","workflow","label"))
+	
+	var viewAccess = fullJson.getArray("authorization","view")
+	if (viewAccess == null) {
+		viewAccess = []
+	}
+	document.addField("authorization_view",viewAccess)
 
+	var editAccess = fullJson.getArray("authorization","edit")
+	if (editAccess == null) {
+		editAccess = []
+	}
+	document.addField("authorization_edit",editAccess)
 
 	String flattenedMetadataJson = new JsonFlattener(fullJson.getObject("metadata").toString()).withFlattenMode(FlattenMode.MONGODB).flatten();
 
