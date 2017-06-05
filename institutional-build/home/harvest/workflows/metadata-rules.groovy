@@ -9,6 +9,8 @@ import com.github.wnameless.json.flattener.FlattenMode
 import com.github.wnameless.json.flattener.JsonFlattener;
 import com.googlecode.fascinator.common.JsonSimple
 import org.apache.commons.lang.StringUtils;
+import org.json.simple.JSONArray;
+import com.googlecode.fascinator.common.JsonObject;
 
 
 SolrInputDocument document = new SolrInputDocument();
@@ -18,74 +20,21 @@ document.addField("storage_id",object.getId());
 
 if(payload.getId().endsWith(".tfpackage")){
 	JsonSimple fullJson = new JsonSimple(payload.open());
-	//set the metadata type
-	document.addField("metadata_type", fullJson.getString("","type"))
 
-	//set the workflow metadata
-	document.addField("workflow.id", fullJson.getString("","workflow","id"))
-	document.addField("workflow.stage", fullJson.getString("","workflow","stage"))
-	document.addField("workflow.label", fullJson.getString("","workflow","label"))
-	
-	var viewAccess = fullJson.getArray("authorization","view")
-	if (viewAccess == null) {
-		viewAccess = []
-	}
-	document.addField("authorization_view",viewAccess)
-
-	var editAccess = fullJson.getArray("authorization","edit")
-	if (editAccess == null) {
-		editAccess = []
-	}
-	document.addField("authorization_edit",editAccess)
-
-	String flattenedMetadataJson = new JsonFlattener(fullJson.getObject("metadata").toString()).withFlattenMode(FlattenMode.MONGODB).flatten();
-
-	ObjectMapper mapper = new ObjectMapper();
-	TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {};
-
-	HashMap<String, Object> tfPackageMap = mapper.readValue(flattenedMetadataJson, typeRef);
-
-	for (key in tfPackageMap.keySet()) {
-		def value = tfPackageMap.get(key);
-		
-		if(value instanceof String) {
-			//may be a date string
-			Date date = parseDate((String) value);
-			if (date != null) {
-				// It's a date so add the value as in a date specific solr field (starting with date_)
-				document.addField("date_"+key,date);
+	for(def topLevelKey in fullJson.getJsonObject().keySet()) {
+		def topLevelValue = fullJson.getJsonObject().get(topLevelKey);
+		if(topLevelValue instanceof JsonObject) {
+			def prefix = topLevelKey+"_";
+			if(topLevelKey.equals("metadata")) {
+				prefix = "";
 			}
-			
-			
-			if(key.matches(".*\\.[0-9]+")){
-				document.addField(key.substring(0, key.lastIndexOf('.')),tfPackageMap.get(key));
-			} else {
-				document.addField(key,tfPackageMap.get(key));
-			}
+			indexObject(document, topLevelValue, prefix);
+		} else {
+			document.addField(topLevelKey,topLevelValue);
 		}
-		
-		if(value instanceof Integer) {
-			document.addField("int_"+key,tfPackageMap.get(key));
-			document.addField(key,tfPackageMap.get(key).toString());
-		}
-		
-		//TODO: Float/Doubles don't appear to be picked up properly by the Jackson Parser
-		if(value instanceof Double) {
-			document.addField("float_"+key, (float)tfPackageMap.get(key).doubleValue());
-			document.addField(key,tfPackageMap.get(key).toString());
-		}
-		
-		if(value instanceof Float) {
-			document.addField("float_"+key, tfPackageMap.get(key));
-			document.addField(key,tfPackageMap.get(key).toString());
-		}
-		
-		if(value instanceof Boolean) {
-			document.addField("bool_"+key,tfPackageMap.get(key));
-			document.addField(key,tfPackageMap.get(key).toString());
-		}
-		
 	}
+
+
 }
 
 def pid = payload.getId()
@@ -110,6 +59,8 @@ def dateObjectModified = params.getProperty("date_object_modified")
 document.addField("date_object_created", dateFormatter.parseDateTime(dateObjectCreated).toDate())
 if(!StringUtils.isBlank(dateObjectModified)) {
 	document.addField("date_object_modified", dateFormatter.parseDateTime(dateObjectModified).toDate())
+} else {
+	document.addField("date_object_modified", dateFormatter.parseDateTime(dateObjectCreated).toDate())
 }
 
 return document;
@@ -117,15 +68,15 @@ return document;
 
 def Date parseDate(String value) {
 	Date date = parseDate(value,ISODateTimeFormat.date());
-	
+
 	if(date == null) {
 		date = parseDate(value,ISODateTimeFormat.dateTime());
 	}
-	
+
 	if(date == null) {
 		date = parseDate(value,ISODateTimeFormat.dateTimeNoMillis());
 	}
-	
+
 	return date;
 }
 
@@ -137,5 +88,58 @@ def Date parseDate(String value, DateTimeFormatter dateFormatter) {
 		//not a date
 	}
 	return date;
+}
+
+def void indexObject(def document, JsonObject jsonObject, String prefix) {
+	String flattenedMetadataJson = new JsonFlattener(new JsonSimple(jsonObject).toString()).withFlattenMode(FlattenMode.MONGODB).flatten();
+
+	ObjectMapper mapper = new ObjectMapper();
+	TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {};
+
+	HashMap<String, Object> tfPackageMap = mapper.readValue(flattenedMetadataJson, typeRef);
+
+
+
+	for (key in tfPackageMap.keySet()) {
+		def value = tfPackageMap.get(key);
+		def fieldKey = prefix+key;
+		if(value instanceof String) {
+			//may be a date string
+			Date date = parseDate((String) value);
+			if (date != null) {
+				// It's a date so add the value as in a date specific solr field (starting with date_)
+				document.addField("date_"+fieldKey,date);
+			}
+
+
+			if(fieldKey.matches(".*\\.[0-9]+")){
+				document.addField(fieldKey.substring(0, fieldKey.lastIndexOf('.')),tfPackageMap.get(key));
+			} else {
+				document.addField(fieldKey,tfPackageMap.get(key));
+			}
+		}
+
+		if(value instanceof Integer) {
+			document.addField("int_"+fieldKey,tfPackageMap.get(key));
+			document.addField(fieldKey,tfPackageMap.get(key).toString());
+		}
+
+		//TODO: Float/Doubles don't appear to be picked up properly by the Jackson Parser
+		if(value instanceof Double) {
+			document.addField("float_"+fieldKey, (float)tfPackageMap.get(key).doubleValue());
+			document.addField(fieldKey,tfPackageMap.get(key).toString());
+		}
+
+		if(value instanceof Float) {
+			document.addField("float_"+fieldKey, tfPackageMap.get(key));
+			document.addField(fieldKey,tfPackageMap.get(key).toString());
+		}
+
+		if(value instanceof Boolean) {
+			document.addField("bool_"+fieldKey,tfPackageMap.get(key));
+			document.addField(fieldKey,tfPackageMap.get(key).toString());
+		}
+
+	}
 }
 
