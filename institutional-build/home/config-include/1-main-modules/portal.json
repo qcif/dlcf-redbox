@@ -83,6 +83,10 @@
             "rdmp": {
                 "jsonconfig": "rdmp.json",
                 "packages-in-package": false
+			},
+            "gridInstitutes": {
+                "jsonconfig": "gridInstitutes.json",
+                "packages-in-package": false
 			}
         },
         "harvestFiles": "${fascinator.home}/harvest",
