@@ -1,0 +1,46 @@
+{
+	"messaging": {
+        "url": "tcp://localhost:${amq.port}",
+        "stompUrl": "stomp://localhost:${amq.stomp.port}",
+        "home": "${project.data}/activemq-data",
+        "startup": {
+            "delay": "5000",
+            "timer": "15000"
+        },
+        "statistics": {
+            "enabled": true,
+            "destination": "houseKeeping"
+        },
+        "toolChainQueue": "transactionManager",
+        "threads": [
+            {
+                "id": "transactionManager",
+                "description": "Transaction Manager Queue for complicated tool chains.",
+                "priority": "5",
+                "config": {
+                    "name": "transactionManager",
+                    "transactionManagerPlugin": "dlcf"
+                }
+            },
+            {
+                "id": "subscriber",
+                "description": "Subscriber queue for event log.",
+                "priority": "7",
+                "config": {
+                    "name": "subscriber",
+                    "subscribers": [
+                        "solr-event-log"
+                    ]
+                }
+            },
+            {
+                "id": "solrwrapper",
+                "description": "Wrapper for ingest into main Solr core.",
+                "priority": "5",
+                "config": {
+                    "name": "solrwrapper"
+                }
+            }            
+        ]
+    }
+}
