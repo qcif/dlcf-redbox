@@ -1,0 +1,15 @@
+{
+	"transformerDefaults": {
+		"raid": {
+			"id": "raid",
+			"trigger": {
+				"condition": "workflow.stage == 'active'",
+				"datastream": ".tfpackage"
+			},
+			"raidProperty": {
+				"property": "metadata.raid",
+				"datastream": ".tfpackage"
+			}
+		}
+	}
+}

@@ -1,6 +1,6 @@
 {
     "storage": {
-        "type": "blobstore",
+        "type": "file-system",
         "file-system": {
             "home": "${storage.home}"
         },
