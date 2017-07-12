@@ -1,0 +1,8 @@
+{
+	"raid": {
+		"api": {
+			"url": "${raid.url}",
+			"key": "${raid.key}"
+		}
+	}
+}
