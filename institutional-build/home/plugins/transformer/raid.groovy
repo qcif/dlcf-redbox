@@ -1,3 +1,5 @@
+import com.google.gson.JsonPrimitive
+
 
 /*
  * The Fascinator - Plugin - Transformer - Raid Curation
@@ -60,6 +62,7 @@ import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * <p>
@@ -230,8 +233,17 @@ public class RaidTransformer implements Transformer {
 			def currentRaid = targetStreamContext.read('$.'+pidProperty);
 			log.info("Check value exists response: " + currentRaid.getClass().getName())
 			log.info("Check value exists response: " + (currentRaid instanceof com.google.gson.JsonObject))
+			def needsRaid = false;
 			//If the raid property was there it would be a String
-			if (targetStreamContext.read('$.'+pidProperty) instanceof com.google.gson.JsonObject) {
+			if (targetStreamContext.read('$.'+pidProperty) instanceof com.google.gson.JsonObject ) {
+				needsRaid = true;
+			}
+			
+			if(targetStreamContext.read('$.'+pidProperty) instanceof com.google.gson.JsonPrimitive && StringUtils.isBlank(((com.google.gson.JsonPrimitive)context.read("$.metadata.raid")).getAsString())){
+				needsRaid = true;
+			}
+			
+			if(needsRaid) {
 				String raid = getRaid();
 				if(raid != null) {
 				targetStreamContext.configuration().addOptions(Option.WRITE_IF_KEY_NOT_EXIST);
