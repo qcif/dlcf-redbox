@@ -271,7 +271,7 @@ public class RaidTransformer implements Transformer {
 		// DateTime().toString(ISODateTimeFormat.dateTime())).build();
 
 		Request request = new Request.Builder().url(apiUrl+"/raids/").addHeader("Content-Type", "application/json")
-				.addHeader("Authorization", "ApiKey " + apiKey).post().build();
+				.addHeader("Authorization", "Token " + apiKey).post().build();
 
 		Response response;
 		try {
