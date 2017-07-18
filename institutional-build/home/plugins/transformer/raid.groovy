@@ -1,6 +1,3 @@
-import com.google.gson.JsonPrimitive
-
-
 /*
  * The Fascinator - Plugin - Transformer - Raid Curation
  * Copyright (C) 2017 Queensland Cyber Infrastructure Foundation (http://www.qcif.edu.au/)
@@ -239,7 +236,7 @@ public class RaidTransformer implements Transformer {
 				needsRaid = true;
 			}
 			
-			if(targetStreamContext.read('$.'+pidProperty) instanceof com.google.gson.JsonPrimitive && StringUtils.isBlank(((com.google.gson.JsonPrimitive)context.read("$.metadata.raid")).getAsString())){
+			if(targetStreamContext.read('$.'+pidProperty) instanceof com.google.gson.JsonPrimitive && StringUtils.isBlank(((com.google.gson.JsonPrimitive)targetStreamContext.read('$.'+pidProperty)).getAsString())){
 				needsRaid = true;
 			}
 			
