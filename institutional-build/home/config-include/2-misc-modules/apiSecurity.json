@@ -1,5 +1,0 @@
-{
-  "api": {
-    "apiKeyFile": "${project.data}/security/apiKeys.json"
-  }
-}

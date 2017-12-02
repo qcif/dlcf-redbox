@@ -270,18 +270,18 @@ public class RaidTransformer implements Transformer {
 		// .add("start_date", new
 		// DateTime().toString(ISODateTimeFormat.dateTime())).build();
 
-		Request request = new Request.Builder().url(apiUrl+"/raids/").addHeader("Content-Type", "application/json")
-				.addHeader("Authorization", "Token " + apiKey).post().build();
+		Request request = new Request.Builder().url(apiUrl+"/RAiD").addHeader("Content-Type", "application/json")
+				.addHeader("Authorization", "Bearer " + apiKey).post().build();
 
 		Response response;
 		try {
 			response = client.newCall(request).execute();
 
-			if (response.code() != 201) {
+			if (response.code() != 200) {
 				throw new StorageException("API call failed: \n" + response.body().string());
 			}
 
-			return new JsonSimple(response.body().string()).getString(null, "raid_id");
+			return new JsonSimple(response.body().string()).getString(null, "raid", "contentPath");
 		} catch (IOException e) {
 			throw new StorageException(e);
 		}
